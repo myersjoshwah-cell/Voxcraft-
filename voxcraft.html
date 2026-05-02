@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxCraft – AI Voiceover Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --gold:#C8A96E;--gold-light:#E8D5A3;--dark:#0A0A0F;--dark2:#12121A;--dark3:#1C1C28;
+    --dark4:#252535;--accent:#7B5EA7;--accent2:#A67FD4;--text:#F0EDE8;--muted:#8B8A9B;
+    --success:#4CAF82;--danger:#E05C5C;--border:rgba(200,169,110,0.18);
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.95);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-0.5px}
+  .logo span{color:var(--gold)}
+  nav .nav-links{display:flex;gap:1.5rem;align-items:center}
+  nav a{color:var(--muted);text-decoration:none;font-size:.9rem;transition:color .2s}
+  nav a:hover{color:var(--text)}
+  .btn{padding:.55rem 1.3rem;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;font-size:.9rem;transition:all .2s}
+  .btn-gold{background:var(--gold);color:#0A0A0F}
+  .btn-gold:hover{background:var(--gold-light)}
+  .badge-access{background:rgba(200,169,110,0.15);border:1px solid var(--gold);color:var(--gold);padding:.2rem .7rem;border-radius:20px;font-size:.75rem;margin-left:.5rem}
+  .hero{text-align:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(123,94,167,0.2) 0%,transparent 70%);pointer-events:none}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;line-height:1.1;margin-bottom:1rem}
+  .hero h1 .highlight{color:var(--gold)}
+  .hero p{color:var(--muted);font-size:1.1rem;max-width:540px;margin:0 auto 2rem;line-height:1.6}
+  .hero-badges{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
+  .hbadge{background:var(--dark3);border:1px solid var(--border);padding:.4rem .9rem;border-radius:20px;font-size:.8rem;color:var(--muted)}
+  .hbadge span{color:var(--text)}
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 2.5rem;background:var(--dark2)}
+  .tab{padding:.9rem 1.5rem;cursor:pointer;font-size:.9rem;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .tab:hover:not(.active){color:var(--text)}
+  .tab-content{display:none;padding:2rem 2.5rem;max-width:1100px;margin:0 auto}
+  .tab-content.active{display:block}
+  .studio-grid{display:grid;grid-template-columns:1fr 340px;gap:1.5rem}
+  .studio-panel{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+  .panel-title{font-family:'Syne',sans-serif;font-weight:600;font-size:1rem;margin-bottom:1.2rem;color:var(--text)}
+  textarea{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;padding:1rem;resize:vertical;min-height:140px;outline:none;transition:border .2s}
+  textarea:focus{border-color:var(--gold)}
+  .char-count{font-size:.78rem;color:var(--muted);text-align:right;margin-top:.4rem}
+  .voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem}
+  .voice-card{background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:.8rem;cursor:pointer;transition:all .2s}
+  .voice-card:hover,.voice-card.selected{border-color:var(--gold);background:rgba(200,169,110,0.07)}
+  .voice-name{font-weight:500;font-size:.88rem;margin-bottom:.2rem}
+  .voice-meta{font-size:.75rem;color:var(--muted)}
+  .voice-pro{font-size:.68rem;background:rgba(123,94,167,0.25);color:var(--accent2);padding:.15rem .5rem;border-radius:10px;display:inline-block;margin-top:.3rem}
+  label{display:block;font-size:.83rem;color:var(--muted);margin-bottom:.4rem}
+  select,input[type=range]{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;padding:.55rem .8rem;outline:none;appearance:none;cursor:pointer;margin-bottom:1rem}
+  select:focus{border-color:var(--gold)}
+  input[type=range]{padding:0;height:6px;accent-color:var(--gold);background:var(--dark4)}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+  .range-val{font-size:.82rem;color:var(--gold);min-width:30px;text-align:right}
+  .generate-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--gold),#A07B40);border:none;border-radius:10px;color:#0A0A0F;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:all .2s;margin-top:.5rem}
+  .generate-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,169,110,0.3)}
+  .generate-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .usage-bar-wrap{background:var(--dark3);border-radius:8px;padding:1rem;margin-top:1rem}
+  .usage-label{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.5rem}
+  .usage-bar{height:6px;background:var(--dark4);border-radius:3px;overflow:hidden}
+  .usage-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--accent2));transition:width .4s}
+  .audio-player{background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-top:1rem;display:none}
+  .audio-player.visible{display:block}
+  .play-row{display:flex;align-items:center;gap:.8rem}
+  .play-btn{width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#0A0A0F;flex-shrink:0}
+  .audio-track{flex:1;height:4px;background:var(--dark4);border-radius:2px;position:relative;cursor:pointer}
+  .audio-progress{height:100%;width:0%;background:var(--gold);border-radius:2px;transition:width .1s linear}
+  .audio-time{font-size:.75rem;color:var(--muted);min-width:55px;text-align:right}
+  .download-row{display:flex;gap:.6rem;margin-top:.8rem}
+  .dl-btn{flex:1;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s}
+  .dl-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .generating-anim{text-align:center;padding:1.5rem;display:none}
+  .generating-anim.visible{display:block}
+  .wave{display:flex;gap:3px;justify-content:center;align-items:center;height:30px}
+  .wave span{width:4px;background:var(--gold);border-radius:2px;animation:wavebar 1s ease-in-out infinite}
+  .wave span:nth-child(2){animation-delay:.1s}.wave span:nth-child(3){animation-delay:.2s}.wave span:nth-child(4){animation-delay:.3s}.wave span:nth-child(5){animation-delay:.4s}
+  @keyframes wavebar{0%,100%{height:6px}50%{height:28px}}
+  .limit-warn{background:rgba(224,92,92,0.1);border:1px solid rgba(224,92,92,0.3);border-radius:8px;padding:.8rem 1rem;font-size:.83rem;color:#E05C5C;margin-top:.8rem;display:none}
+  .limit-warn.visible{display:block}
+  .pricing-intro{text-align:center;margin-bottom:2.5rem}
+  .pricing-intro h2{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+  .pricing-intro p{color:var(--muted);font-size:.95rem}
+  .plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .plan-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:1.5rem;position:relative;transition:all .2s}
+  .plan-card:hover{border-color:rgba(200,169,110,0.4);transform:translateY(-3px)}
+  .plan-card.featured{border-color:var(--gold);background:rgba(200,169,110,0.04)}
+  .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:#0A0A0F;font-size:.7rem;font-weight:700;padding:.2rem .8rem;border-radius:20px;white-space:nowrap}
+  .plan-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.3rem}
+  .plan-price{font-size:1.8rem;font-weight:700;color:var(--gold);line-height:1;margin-bottom:.2rem}
+  .plan-price sub{font-size:.75rem;font-weight:400;color:var(--muted)}
+  .plan-chars{font-size:.8rem;color:var(--muted);margin-bottom:1rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+  .plan-features{list-style:none;margin-bottom:1.2rem}
+  .plan-features li{font-size:.82rem;color:var(--muted);padding:.25rem 0;display:flex;gap:.5rem;align-items:flex-start}
+  .plan-features li::before{content:'&#10003;';color:var(--success);flex-shrink:0;margin-top:1px}
+  .plan-features li.no::before{content:'&#10007;';color:var(--danger)}
+  .plan-features li.no{opacity:.5}
+  .select-plan-btn{width:100%;padding:.7rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;transition:all .2s}
+  .select-plan-btn:hover,.plan-card.featured .select-plan-btn{background:var(--gold);color:#0A0A0F;border-color:var(--gold)}
+  .payment-note{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;font-size:.85rem;color:var(--muted);line-height:1.6}
+  .payment-note strong{color:var(--text)}
+  .card-brands{display:flex;gap:.5rem;align-items:center;margin-bottom:1rem}
+  .card-brand{background:var(--dark3);border:1px solid var(--border);border-radius:6px;padding:.3rem .7rem;font-size:.75rem;color:var(--muted);font-weight:500}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--dark2);border:1px solid var(--border);border-radius:18px;padding:2rem;width:90%;max-width:440px;position:relative;max-height:90vh;overflow-y:auto}
+  .modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
+  .modal-close:hover{color:var(--text)}
+  .modal h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;margin-bottom:.3rem}
+  .plan-summary-box{background:var(--dark3);border-radius:10px;padding:.9rem 1rem;margin:1rem 0;display:flex;justify-content:space-between;align-items:center}
+  .plan-summary-box span{font-size:.9rem;color:var(--muted)}
+  .plan-summary-box strong{color:var(--gold);font-size:1.05rem}
+  .secure-note{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--muted);margin-bottom:1rem}
+  .secure-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0}
+  .form-group{margin-bottom:1rem}
+  .form-group label{font-size:.82rem;color:var(--muted);margin-bottom:.4rem;display:block}
+  .form-group input{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;padding:.65rem .9rem;outline:none;transition:border .2s}
+  .form-group input:focus{border-color:var(--gold)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+  .pay-btn{width:100%;padding:.9rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#A07B40);color:#0A0A0F;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;margin-top:.5rem;transition:all .2s}
+  .pay-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,169,110,0.3)}
+  .pay-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .success-screen{display:none;text-align:center;padding:1rem 0}
+  .success-screen.visible{display:block}
+  .success-icon{width:64px;height:64px;border-radius:50%;background:rgba(76,175,130,0.12);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 1rem}
+  .success-screen h3{font-family:'Syne',sans-serif;font-size:1.3rem;margin-bottom:.5rem}
+  .success-screen p{color:var(--muted);font-size:.88rem;line-height:1.6;margin-bottom:1.2rem}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .stat-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.2rem}
+  .stat-label{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
+  .stat-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700}
+  .stat-val.gold{color:var(--gold)}
+  .stat-change{font-size:.75rem;color:var(--success);margin-top:.2rem}
+  .history-table{width:100%;border-collapse:collapse;font-size:.85rem}
+  .history-table th{text-align:left;color:var(--muted);padding:.6rem .8rem;border-bottom:1px solid var(--border);font-weight:400}
+  .history-table td{padding:.7rem .8rem;border-bottom:1px solid rgba(200,169,110,0.07);color:var(--text)}
+  .history-table tr:last-child td{border-bottom:none}
+  .plan-tag{display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem}
+  .tag-free{background:rgba(139,138,155,0.15);color:var(--muted)}
+  .tag-starter{background:rgba(200,169,110,0.08);color:var(--muted)}
+  .tag-pro{background:rgba(200,169,110,0.15);color:var(--gold)}
+  .tag-studio{background:rgba(123,94,167,0.2);color:var(--accent2)}
+  .tag-elite{background:rgba(76,175,130,0.15);color:var(--success)}
+  @media(max-width:700px){.studio-grid{grid-template-columns:1fr}.plans-grid{grid-template-columns:1fr 1fr}.tabs{padding:0 1rem;overflow-x:auto}.tab-content{padding:1.5rem 1rem}nav{padding:1rem}}
+  @media(max-width:440px){.plans-grid{grid-template-columns:1fr}}
+  ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--dark)}::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Vox<span>Craft</span></div>
+  <div class="nav-links">
+    <a href="#" onclick="showTab('studio')">Studio</a>
+    <a href="#" onclick="showTab('pricing')">Pricing</a>
+    <a href="#" onclick="showTab('dashboard')">Dashboard</a>
+    <button class="btn btn-gold" onclick="openModal(null,'upgrade')">Upgrade</button>
+  </div>
+</nav>
+
+<div class="hero" id="heroSection">
+  <h1>Studio-Quality<br><span class="highlight">AI Voiceovers</span><br>In Seconds</h1>
+  <p>Ultra-realistic voices powered by next-gen neural TTS. Choose your voice, paste your script, and download broadcast-ready audio.</p>
+  <div class="hero-badges">
+    <div class="hbadge"><span>50+</span> Realistic Voices</div>
+    <div class="hbadge"><span>6</span> Languages</div>
+    <div class="hbadge">WAV &middot; MP3 Export</div>
+    <div class="hbadge"><span>Pro</span> SSML Support</div>
+  </div>
+  <button class="btn btn-gold" onclick="showTab('studio');document.getElementById('heroSection').style.display='none'">Start Creating Free</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('studio')">Studio</div>
+  <div class="tab" onclick="showTab('pricing')">Plans &amp; Pricing</div>
+  <div class="tab" onclick="showTab('dashboard')">My Dashboard</div>
+</div>
+
+<!-- STUDIO -->
+<div class="tab-content active" id="tab-studio">
+  <div class="studio-grid">
+    <div>
+      <div class="studio-panel">
+        <div class="panel-title">Your Script</div>
+        <textarea id="scriptText" placeholder="Paste your voiceover script here..." oninput="updateCharCount()"></textarea>
+        <div class="char-count"><span id="charCount">0</span> / <span id="charLimit">500</span> characters (Free Plan)</div>
+        <div class="limit-warn" id="limitWarn">You've reached your free limit. <a href="#" onclick="showTab('pricing')" style="color:var(--gold)">Upgrade your plan</a> to generate more.</div>
+      </div>
+      <div class="studio-panel" style="margin-top:1rem">
+        <div class="panel-title">Choose a Voice</div>
+        <div class="voice-grid">
+          <div class="voice-card selected" data-voice="aria" onclick="selectVoice(this)"><div class="voice-name">Aria</div><div class="voice-meta">Female &middot; American &middot; Warm</div></div>
+          <div class="voice-card" data-voice="marcus" onclick="selectVoice(this)"><div class="voice-name">Marcus</div><div class="voice-meta">Male &middot; British &middot; Deep</div></div>
+          <div class="voice-card" data-voice="luna" onclick="selectVoice(this)"><div class="voice-name">Luna</div><div class="voice-meta">Female &middot; Australian &middot; Bright</div><div class="voice-pro">Pro+</div></div>
+          <div class="voice-card" data-voice="rex" onclick="selectVoice(this)"><div class="voice-name">Rex</div><div class="voice-meta">Male &middot; American &middot; Gravelly</div><div class="voice-pro">Pro+</div></div>
+          <div class="voice-card" data-voice="sofia" onclick="selectVoice(this)"><div class="voice-name">Sofia</div><div class="voice-meta">Female &middot; Spanish &middot; Elegant</div><div class="voice-pro">Studio+</div></div>
+          <div class="voice-card" data-voice="kai" onclick="selectVoice(this)"><div class="voice-name">Kai</div><div class="voice-meta">Non-binary &middot; Neutral &middot; Clear</div><div class="voice-pro">Studio+</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="studio-panel">
+        <div class="panel-title">Voice Settings</div>
+        <label>Language &amp; Accent</label>
+        <select><option>English (US)</option><option>English (UK)</option><option>English (AU)</option><option>Spanish</option><option>French</option><option>German</option></select>
+        <label>Emotion / Style</label>
+        <select><option>Natural</option><option>Professional</option><option>Conversational</option><option>Energetic</option><option>Calm</option><option>Dramatic</option></select>
+        <div class="settings-row"><label style="margin:0">Speed</label><span class="range-val" id="speedVal">1.0x</span></div>
+        <input type="range" min="50" max="200" value="100" step="5" oninput="document.getElementById('speedVal').textContent=(this.value/100).toFixed(1)+'x'">
+        <div class="settings-row"><label style="margin:0">Pitch</label><span class="range-val" id="pitchVal">0</span></div>
+        <input type="range" min="-10" max="10" value="0" step="1" oninput="document.getElementById('pitchVal').textContent=this.value">
+        <button class="generate-btn" id="genBtn" onclick="generateVoice()">Generate Voiceover</button>
+        <div class="generating-anim" id="genAnim">
+          <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+          <p style="margin-top:.7rem;font-size:.83rem;color:var(--muted)">Synthesizing voice...</p>
+        </div>
+        <div class="audio-player" id="audioPlayer">
+          <div class="play-row">
+            <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+            <div class="audio-track" id="audioTrack" onclick="seekAudio(event)"><div class="audio-progress" id="audioProgress"></div></div>
+            <span class="audio-time" id="audioTime">0:00 / 0:18</span>
+          </div>
+          <div class="download-row">
+            <button class="dl-btn" onclick="simulateDownload('mp3')">&#8595; MP3</button>
+            <button class="dl-btn" onclick="simulateDownload('wav')">&#8595; WAV</button>
+          </div>
+        </div>
+        <div class="usage-bar-wrap" style="margin-top:1.2rem">
+          <div class="usage-label">
+            <span style="font-size:.8rem;color:var(--muted)">Monthly Usage</span>
+            <span style="font-size:.8rem;color:var(--gold)" id="usageText">0 / 500 chars</span>
+          </div>
+          <div class="usage-bar"><div class="usage-fill" id="usageFill" style="width:0%"></div></div>
+          <div style="font-size:.74rem;color:var(--muted);margin-top:.4rem;text-align:right" id="planLabel">Free Plan &middot; <a href="#" onclick="showTab('pricing')" style="color:var(--gold)">Upgrade</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="tab-content" id="tab-pricing">
+  <div class="pricing-intro">
+    <h2>Simple, Transparent Pricing</h2>
+    <p>Start free, upgrade when you need more. Cancel anytime.</p>
+  </div>
+  <div class="plans-grid">
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<sub>/mo</sub></div>
+      <div class="plan-chars">500 characters/mo</div>
+      <ul class="plan-features">
+        <li>2 standard voices</li><li>MP3 export</li><li>Basic styles</li>
+        <li class="no">No WAV export</li><li class="no">No priority render</li><li class="no">No commercial use</li>
+      </ul>
+      <button class="select-plan-btn">Current Plan</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$9<sub>/mo</sub></div>
+      <div class="plan-chars">10,000 characters/mo</div>
+      <ul class="plan-features">
+        <li>10 voices</li><li>MP3 + WAV export</li><li>All styles</li><li>Commercial use</li>
+        <li class="no">No SSML</li><li class="no">No API access</li>
+      </ul>
+      <button class="select-plan-btn" onclick="openModal({name:'Starter',price:'$9',tier:'starter'})">Get Starter</button>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-badge">Most Popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$29<sub>/mo</sub></div>
+      <div class="plan-chars">100,000 characters/mo</div>
+      <ul class="plan-features">
+        <li>30+ voices</li><li>MP3 + WAV + AIFF</li><li>All styles + SSML</li><li>Commercial use</li><li>Priority rendering</li>
+        <li class="no">No API access</li>
+      </ul>
+      <button class="select-plan-btn" onclick="openModal({name:'Pro',price:'$29',tier:'pro'})">Get Pro</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Studio</div>
+      <div class="plan-price">$79<sub>/mo</sub></div>
+      <div class="plan-chars">500,000 characters/mo</div>
+      <ul class="plan-features">
+        <li>50+ voices</li><li>All formats + stems</li><li>SSML + phoneme edit</li><li>Commercial use</li><li>Priority + API access</li><li>Team seats (3)</li>
+      </ul>
+      <button class="select-plan-btn" onclick="openModal({name:'Studio',price:'$79',tier:'studio'})">Get Studio</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Elite</div>
+      <div class="plan-price">$199<sub>/mo</sub></div>
+      <div class="plan-chars">Unlimited characters</div>
+      <ul class="plan-features">
+        <li>All 50+ voices</li><li>All formats + RAW</li><li>Full SSML + API</li><li>White-label option</li><li>Dedicated support</li><li>Unlimited team seats</li>
+      </ul>
+      <button class="select-plan-btn" onclick="openModal({name:'Elite',price:'$199',tier:'elite'})">Get Elite</button>
+    </div>
+  </div>
+  <div class="payment-note">
+    <strong>Accepted payment:</strong> Visa, Mastercard, and American Express &mdash; secured by SSL encryption.<br><br>
+    <strong>&#9888; Creator note:</strong> To collect real card payments you need to connect <strong>Stripe</strong> (stripe.com). It takes about 1 hour to set up and handles all card processing, receipts, and subscriptions automatically. This demo simulates the full payment flow &mdash; no real charges occur until Stripe is connected.
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="tab-content" id="tab-dashboard">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.5rem">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700">My Dashboard</div>
+      <div style="color:var(--muted);font-size:.85rem;margin-top:.2rem">Track your usage and history</div>
+    </div>
+    <span class="badge-access" id="planBadge">Free Plan</span>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Characters Used</div><div class="stat-val gold" id="statUsed">0</div><div class="stat-change" id="statLimit">/ 500 this month</div></div>
+    <div class="stat-card"><div class="stat-label">Generations</div><div class="stat-val" id="statGens">0</div><div class="stat-change">Total renders</div></div>
+    <div class="stat-card"><div class="stat-label">Downloads</div><div class="stat-val" id="statDL">0</div><div class="stat-change">Files exported</div></div>
+    <div class="stat-card"><div class="stat-label">Current Plan</div><div class="stat-val" style="font-size:1.2rem" id="statPlan">Free</div><div class="stat-change" style="color:var(--gold);cursor:pointer" onclick="showTab('pricing')">Upgrade &#8599;</div></div>
+  </div>
+  <div class="studio-panel">
+    <div class="panel-title">Generation History</div>
+    <table class="history-table">
+      <thead><tr><th>Voice</th><th>Characters</th><th>Plan</th><th>Date</th></tr></thead>
+      <tbody id="historyBody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">No generations yet. Start in the Studio tab!</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const STATE={plan:'free',charsUsed:0,charLimit:500,generations:0,downloads:0,history:[],playing:false,playInterval:null,playProgress:0,accessCodes:['VOXFULL-C7X9-MASTER','VOXFULL-K2M4-ADMIN']};
+const PLAN_LIMITS={free:500,starter:10000,pro:100000,studio:500000,elite:Infinity};
+const PLAN_NAMES={free:'Free',starter:'Starter',pro:'Pro',studio:'Studio',elite:'Elite'};
+let _activePlan=null;
+
+function showTab(id){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  ['studio','pricing','dashboard'].forEach((t,i)=>{if(t===id)document.querySelectorAll('.tab')[i].classList.add('active');});
+  if(id!=='studio')document.getElementById('heroSection').style.display='none';
+  if(id==='dashboard')refreshDashboard();
+}
+
+function selectVoice(el){
+  const proBadge=el.querySelector('.voice-pro');
+  if(proBadge){
+    const req=proBadge.textContent.includes('Studio')?'studio':'starter';
+    const tiers=['free','starter','pro','studio','elite'];
+    if(tiers.indexOf(STATE.plan)<tiers.indexOf(req)){alert('This voice requires the '+proBadge.textContent.replace('+','')+' plan or higher.');return;}
+  }
+  document.querySelectorAll('.voice-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function updateCharCount(){
+  const txt=document.getElementById('scriptText').value;
+  const count=txt.length;
+  document.getElementById('charCount').textContent=count;
+  document.getElementById('charLimit').textContent=STATE.charLimit===Infinity?'Unlimited':STATE.charLimit.toLocaleString();
+  document.getElementById('limitWarn').classList.toggle('visible',count>=STATE.charLimit&&STATE.charLimit!==Infinity);
+}
+
+function generateVoice(){
+  const txt=document.getElementById('scriptText').value.trim();
+  if(!txt){alert('Please enter some script text first.');return;}
+  const count=txt.length;
+  if(count>STATE.charLimit&&STATE.charLimit!==Infinity){document.getElementById('limitWarn').classList.add('visible');return;}
+  const genBtn=document.getElementById('genBtn');
+  genBtn.disabled=true;
+  document.getElementById('genAnim').classList.add('visible');
+  document.getElementById('audioPlayer').classList.remove('visible');
+  setTimeout(()=>{
+    STATE.charsUsed=STATE.charLimit===Infinity?STATE.charsUsed+count:Math.min(STATE.charsUsed+count,STATE.charLimit);
+    STATE.generations++;
+    const voice=document.querySelector('.voice-card.selected')?.querySelector('.voice-name')?.textContent||'Aria';
+    STATE.history.unshift({voice,chars:count,plan:STATE.plan,date:new Date().toLocaleDateString()});
+    updateUsageBar();
+    genBtn.disabled=false;
+    document.getElementById('genAnim').classList.remove('visible');
+    document.getElementById('audioPlayer').classList.add('visible');
+    STATE.playProgress=0;
+    document.getElementById('audioProgress').style.width='0%';
+    document.getElementById('playBtn').innerHTML='&#9654;';
+    STATE.playing=false;
+    if(STATE.playInterval)clearInterval(STATE.playInterval);
+  },2000);
+}
+
+function togglePlay(){
+  if(STATE.playing){clearInterval(STATE.playInterval);STATE.playing=false;document.getElementById('playBtn').innerHTML='&#9654;';}
+  else{
+    STATE.playing=true;document.getElementById('playBtn').innerHTML='&#9646;&#9646;';
+    STATE.playInterval=setInterval(()=>{
+      STATE.playProgress+=100/180;
+      document.getElementById('audioProgress').style.width=Math.min(STATE.playProgress,100)+'%';
+      const secs=Math.round(STATE.playProgress*18/100);
+      document.getElementById('audioTime').textContent='0:'+String(secs).padStart(2,'0')+' / 0:18';
+      if(STATE.playProgress>=100){clearInterval(STATE.playInterval);STATE.playing=false;document.getElementById('playBtn').innerHTML='&#9654;';STATE.playProgress=0;document.getElementById('audioProgress').style.width='0%';document.getElementById('audioTime').textContent='0:00 / 0:18';}
+    },100);
+  }
+}
+
+function seekAudio(e){
+  const rect=document.getElementById('audioTrack').getBoundingClientRect();
+  STATE.playProgress=((e.clientX-rect.left)/rect.width)*100;
+  document.getElementById('audioProgress').style.width=STATE.playProgress+'%';
+}
+
+function simulateDownload(fmt){STATE.downloads++;alert('Exported as '+fmt.toUpperCase()+'. Connect your TTS backend to enable real downloads.');}
+
+function updateUsageBar(){
+  const used=STATE.charsUsed,lim=STATE.charLimit;
+  document.getElementById('usageFill').style.width=(lim===Infinity?5:Math.min((used/lim)*100,100))+'%';
+  document.getElementById('usageText').textContent=(lim===Infinity?used.toLocaleString()+' / Unlimited':used.toLocaleString()+' / '+lim.toLocaleString())+' chars';
+  document.getElementById('planLabel').innerHTML=PLAN_NAMES[STATE.plan]+' Plan &middot; <a href="#" onclick="showTab(\'pricing\')" style="color:var(--gold)">Upgrade</a>';
+}
+
+function activatePlan(tier){
+  STATE.plan=tier;STATE.charLimit=PLAN_LIMITS[tier];
+  updateUsageBar();updateCharCount();
+  document.getElementById('planBadge').textContent=PLAN_NAMES[tier]+' Plan';
+}
+
+function refreshDashboard(){
+  document.getElementById('statUsed').textContent=STATE.charsUsed.toLocaleString();
+  document.getElementById('statGens').textContent=STATE.generations;
+  document.getElementById('statDL').textContent=STATE.downloads;
+  document.getElementById('statPlan').textContent=PLAN_NAMES[STATE.plan];
+  document.getElementById('planBadge').textContent=PLAN_NAMES[STATE.plan]+' Plan';
+  document.getElementById('statLimit').textContent='/ '+(STATE.charLimit===Infinity?'Unlimited':STATE.charLimit.toLocaleString())+' this month';
+  const body=document.getElementById('historyBody');
+  body.innerHTML=STATE.history.length===0
+    ?'<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">No generations yet.</td></tr>'
+    :STATE.history.slice(0,10).map(h=>'<tr><td>'+h.voice+'</td><td>'+h.chars+'</td><td><span class="plan-tag tag-'+h.plan+'">'+PLAN_NAMES[h.plan]+'</span></td><td style="color:var(--muted)">'+h.date+'</td></tr>').join('');
+}
+
+function openModal(plan,mode){
+  _activePlan=plan;
+  const content=document.getElementById('modalContent');
+  document.getElementById('modalOverlay').classList.add('open');
+  if(!plan||mode==='upgrade'){
+    content.innerHTML='<h3 style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:1.2rem;margin-bottom:.3rem">Choose a Plan</h3><p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem">Select a plan to continue to payment</p><div style="display:flex;flex-direction:column;gap:.6rem">'+
+      ['Starter|$9|starter','Pro|$29|pro','Studio|$79|studio','Elite|$199|elite'].map(p=>{
+        const[n,pr,t]=p.split('|');
+        return '<button onclick="openModal({name:\''+n+'\',price:\''+pr+'\',tier:\''+t+'\'})" style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;color:var(--text);cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;font-family:\'DM Sans\',sans-serif;font-size:.9rem;width:100%;transition:border-color .2s" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="this.style.borderColor=\'var(--border)\'"><span>'+n+'</span><strong style="color:var(--gold)">'+pr+'/mo</strong></button>';
+      }).join('')+'</div>';
+    return;
+  }
+  content.innerHTML=
+    '<h3>Pay with Card</h3>'+
+    '<p style="color:var(--muted);font-size:.83rem;margin-top:.2rem">Instant access after payment clears</p>'+
+    '<div class="plan-summary-box"><span>'+plan.name+' Plan &mdash; billed monthly</span><strong>'+plan.price+'/mo</strong></div>'+
+    '<div class="secure-note"><div class="secure-dot"></div>Secured with 256-bit SSL encryption</div>'+
+    '<div class="card-brands"><span class="card-brand">VISA</span><span class="card-brand">Mastercard</span><span class="card-brand">AMEX</span></div>'+
+    '<div id="cardPayForm">'+
+      '<div class="form-group"><label>Cardholder Name</label><input type="text" placeholder="Jane Smith" id="cardName"></div>'+
+      '<div class="form-group"><label>Card Number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="cardNum" oninput="fmtCard(this)"></div>'+
+      '<div class="form-row">'+
+        '<div class="form-group"><label>Expiry (MM/YY)</label><input type="text" placeholder="08/27" maxlength="5" id="cardExp" oninput="fmtExp(this)"></div>'+
+        '<div class="form-group"><label>CVV</label><input type="password" placeholder="&bull;&bull;&bull;" maxlength="4" id="cardCVV"></div>'+
+      '</div>'+
+      '<div class="form-group"><label>Billing Email</label><input type="email" placeholder="you@email.com" id="cardEmail"></div>'+
+      '<button class="pay-btn" id="payNowBtn" onclick="processPayment()">Pay '+plan.price+' Now</button>'+
+      '<p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:.8rem">You can cancel anytime from your dashboard.</p>'+
+    '</div>'+
+    '<div class="success-screen" id="successScreen">'+
+      '<div class="success-icon">&#10003;</div>'+
+      '<h3>Payment Successful!</h3>'+
+      '<p>You now have full <strong>'+plan.name+'</strong> plan access. Everything is unlocked and ready to use right now.</p>'+
+      '<button class="btn btn-gold" style="width:100%;padding:.8rem;border-radius:8px;cursor:pointer;font-weight:600" onclick="closeModal();showTab(\'studio\')">Open Studio &#8599;</button>'+
+    '</div>';
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+
+function fmtCard(el){let v=el.value.replace(/\D/g,'').substring(0,16);el.value=v.replace(/(.{4})/g,'$1 ').trim();}
+function fmtExp(el){let v=el.value.replace(/\D/g,'');if(v.length>=3)v=v.substring(0,2)+'/'+v.substring(2,4);el.value=v;}
+
+function processPayment(){
+  const name=document.getElementById('cardName')?.value.trim();
+  const num=document.getElementById('cardNum')?.value.replace(/\s/g,'');
+  const exp=document.getElementById('cardExp')?.value;
+  const cvv=document.getElementById('cardCVV')?.value;
+  const email=document.getElementById('cardEmail')?.value.trim();
+  if(!name||num.length<16||exp.length<5||cvv.length<3||!email.includes('@')){alert('Please fill in all card details correctly.');return;}
+  const btn=document.getElementById('payNowBtn');
+  btn.textContent='Processing...';btn.disabled=true;
+  setTimeout(()=>{
+    if(_activePlan)activatePlan(_activePlan.tier);
+    document.getElementById('cardPayForm').style.display='none';
+    document.querySelectorAll('.plan-summary-box,.secure-note,.card-brands').forEach(e=>e.style.display='none');
+    document.getElementById('successScreen').classList.add('visible');
+  },2000);
+}
+
+// Hidden creator access: Ctrl + Shift + A
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.shiftKey&&e.key==='A'){
+    const code=prompt('Enter Creator Access Code:');
+    if(STATE.accessCodes.includes(code)){activatePlan('elite');alert('Full access granted! Elite plan activated.');}
+    else if(code){alert('Invalid access code.');}
+  }
+});
+
+updateUsageBar();
+</script>
+</body>
+</html>
